@@ -1,5 +1,12 @@
 {
   "dependencies": {
+    "com.chark.scriptable-events": {
+      "version": "https://github.com/chark/scriptable-events.git#upm",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "24c4c9bc4c585fdace4b778f1876d24033e90934"
+    },
     "com.unity.2d.animation": {
       "version": "10.1.4",
       "depth": 1,
@@ -368,9 +375,9 @@
       "depth": 0,
       "source": "registry",
       "dependencies": {
-        "com.unity.modules.unitywebrequest": "1.0.0",
+        "com.unity.modules.androidjni": "1.0.0",
         "com.unity.nuget.newtonsoft-json": "3.2.1",
-        "com.unity.modules.androidjni": "1.0.0"
+        "com.unity.modules.unitywebrequest": "1.0.0"
       },
       "url": "https://packages.unity.com"
     },
