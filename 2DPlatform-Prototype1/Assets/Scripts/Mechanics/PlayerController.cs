@@ -5,6 +5,7 @@ using Platformer.Gameplay;
 using static Platformer.Core.Simulation;
 using Platformer.Model;
 using Platformer.Core;
+using System.ComponentModel;
 
 namespace Platformer.Mechanics
 {
@@ -18,6 +19,8 @@ namespace Platformer.Mechanics
         public AudioClip respawnAudio;
         public AudioClip ouchAudio;
 
+
+        [Header("Player Parameters")]
         /// <summary>
         /// Max horizontal speed of the player.
         /// </summary>
@@ -39,6 +42,45 @@ namespace Platformer.Mechanics
         public float jumpBufferTime = 0.2f;
         private float jumpBufferCounter;
 
+
+        [Header("Wall Slide Parameters")]
+        /// <summary>
+        /// Wall slide speed limit
+        /// </summary>
+        public float wallSlideSpeed = 3f;
+        private bool isWallSliding;
+
+        /// <summary>
+        /// Layer mask for wall detection
+        /// </summary>
+        [SerializeField] private LayerMask wallLayer;
+
+        /// <summary>
+        /// Transforms for wall checks
+        /// </summary>
+        [SerializeField] private List<Transform> wallCheck;
+
+        [Header("Wall Jump Parameters")]
+        private bool isWallJumping;
+        [SerializeField] private float wallJumpDirection;
+
+        /// <summary>
+        /// Time allowed to wall jump after leaving the wall
+        /// </summary>
+        [SerializeField] private float wallJumpingTime = 0.2f;
+        private float wallJumpingCounter;
+
+        /// <summary>
+        /// Duration of wall jump invincibility
+        /// </summary>
+        [SerializeField] private float wallJumpingDuration = 0.4f;
+
+        /// <summary>
+        /// Power of wall jump in x and y directions
+        /// </summary>
+        [SerializeField] private Vector2 wallJumpingPower = new Vector2(8f, 16f);
+
+        [Header("Player States")]
         public JumpState jumpState = JumpState.Grounded;
         private bool stopJump;
         /*internal new*/ public Collider2D collider2d;
@@ -76,7 +118,6 @@ namespace Platformer.Mechanics
                     jumpBufferCounter = jumpBufferTime;
                 else
                     jumpBufferCounter -= Time.deltaTime;
-
                 move.x = Input.GetAxis("Horizontal");
                 if (jumpState == JumpState.Grounded && jumpBufferCounter > 0f)
                     jumpState = JumpState.PrepareToJump;
@@ -87,6 +128,9 @@ namespace Platformer.Mechanics
 
                     coyoteTimeCounter = 0f;
                 }
+
+                WallSlide();
+                WallJump();
             }
             else
             {
@@ -127,8 +171,20 @@ namespace Platformer.Mechanics
             }
         }
 
+        protected override void FixedUpdate()
+        {
+            base.FixedUpdate();
+        }
+
         protected override void ComputeVelocity()
         {
+            if (isWallJumping)
+            {
+                Debug.Log($"ComputeVelocity: isWallJumping = {isWallJumping}, Velocity = {velocity}");
+                targetVelocity.x = velocity.x;
+                return;
+            }
+
             if (jump && coyoteTimeCounter > 0f)
             {
                 velocity.y = jumpTakeOffSpeed * model.jumpModifier;
@@ -143,16 +199,82 @@ namespace Platformer.Mechanics
                 }
             }
 
+
             if (move.x > 0.01f)
                 spriteRenderer.flipX = false;
             else if (move.x < -0.01f)
-                spriteRenderer.flipX = true;
+                spriteRenderer.flipX = true;               
 
             animator.SetBool("grounded", IsGrounded);
             animator.SetFloat("velocityY", velocity.y);
             animator.SetFloat("velocityX", Mathf.Abs(velocity.x) / maxSpeed);
 
             targetVelocity = move * maxSpeed;
+        }
+
+        private bool IsWalled()
+        {
+            foreach (var check in wallCheck)
+            {
+                if (Physics2D.OverlapCircle(check.position, 0.1f, wallLayer))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private void WallSlide()
+        {
+            if (IsWalled() && !IsGrounded && !isWallJumping && move.x != 0)
+            {
+                isWallSliding = true;
+                velocity.y = Mathf.Clamp(velocity.y, -wallSlideSpeed, float.MaxValue);
+            }
+            else
+            {
+                isWallSliding = false;
+            }
+        }
+
+        private void WallJump()
+        {
+            if (isWallSliding)
+            {
+                isWallJumping = false;
+                wallJumpDirection = spriteRenderer.flipX ? 1f : -1f;
+                wallJumpingCounter = wallJumpingTime;
+
+                CancelInvoke(nameof(StopWallJump));
+            }
+            else
+            {
+                wallJumpingCounter -= Time.deltaTime;
+            }
+
+            if (Input.GetButtonDown("Jump") && wallJumpingCounter > 0f)
+            {
+                isWallJumping = true;
+                isWallSliding = false;
+                velocity.x = wallJumpDirection * jumpTakeOffSpeed * model.jumpModifier;
+                velocity.y = jumpTakeOffSpeed * model.jumpModifier;
+
+                wallJumpingCounter = 0f;
+
+                if (wallJumpDirection != (spriteRenderer.flipX ? 1f : -1f))
+                {
+                    spriteRenderer.flipX = !spriteRenderer.flipX;
+                }
+
+                Debug.Log($"Wall Jump! Velocity: {velocity}, Direction: {wallJumpDirection}");
+
+                Invoke(nameof(StopWallJump), wallJumpingDuration);
+            }
+        }
+
+        private void StopWallJump()
+        {
+            isWallJumping = false;
         }
 
         public enum JumpState
