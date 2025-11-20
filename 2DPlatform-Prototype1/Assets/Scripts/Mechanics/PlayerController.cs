@@ -131,6 +131,8 @@ namespace Platformer.Mechanics
 
                 WallSlide();
                 WallJump();
+
+                EnableMomentum();
             }
             else
             {
@@ -242,7 +244,8 @@ namespace Platformer.Mechanics
             if (isWallSliding)
             {
                 isWallJumping = false;
-                wallJumpDirection = spriteRenderer.flipX ? 1f : -1f;
+                if (wallJumpDirection == 0f)
+                    wallJumpDirection = -Mathf.Sign(move.x);
                 wallJumpingCounter = wallJumpingTime;
 
                 CancelInvoke(nameof(StopWallJump));
@@ -257,24 +260,42 @@ namespace Platformer.Mechanics
                 isWallJumping = true;
                 isWallSliding = false;
                 velocity.x = wallJumpDirection * jumpTakeOffSpeed * model.jumpModifier;
-                velocity.y = jumpTakeOffSpeed * model.jumpModifier;
+                velocity.y = jumpTakeOffSpeed * model.jumpModifier * 0.5f;
+
+                PreserveMomentum = true;
+
 
                 wallJumpingCounter = 0f;
 
-                if (wallJumpDirection != (spriteRenderer.flipX ? 1f : -1f))
+                if (wallJumpDirection == (spriteRenderer.flipX ? 1f : -1f))
                 {
                     spriteRenderer.flipX = !spriteRenderer.flipX;
                 }
 
                 Debug.Log($"Wall Jump! Velocity: {velocity}, Direction: {wallJumpDirection}");
 
+                wallJumpDirection = 0f;
+
                 Invoke(nameof(StopWallJump), wallJumpingDuration);
+            }
+
+            if (wallJumpingCounter <= 0f || IsGrounded)
+            {
+                wallJumpDirection = 0f;
             }
         }
 
         private void StopWallJump()
         {
             isWallJumping = false;
+
+            targetVelocity.x = velocity.x;
+        }   
+
+        private void EnableMomentum()
+        {
+            if (IsWalled() || IsGrounded)
+                PreserveMomentum = false;
         }
 
         public enum JumpState
