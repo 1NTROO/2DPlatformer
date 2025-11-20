@@ -27,6 +27,18 @@ namespace Platformer.Mechanics
         /// </summary>
         public float jumpTakeOffSpeed = 7;
 
+        /// <summary>
+        /// Coyote time duration in seconds.
+        /// </summary>
+        public float coyoteTime = 0.2f;
+        private float coyoteTimeCounter;
+
+        /// <summary>
+        /// Jump buffer duration in seconds.
+        /// </summary>
+        public float jumpBufferTime = 0.2f;
+        private float jumpBufferCounter;
+
         public JumpState jumpState = JumpState.Grounded;
         private bool stopJump;
         /*internal new*/ public Collider2D collider2d;
@@ -53,15 +65,27 @@ namespace Platformer.Mechanics
 
         protected override void Update()
         {
+            if (IsGrounded)
+                coyoteTimeCounter = coyoteTime;
+            else
+                coyoteTimeCounter -= Time.deltaTime;
+
             if (controlEnabled)
             {
+                if (Input.GetButtonDown("Jump"))
+                    jumpBufferCounter = jumpBufferTime;
+                else
+                    jumpBufferCounter -= Time.deltaTime;
+
                 move.x = Input.GetAxis("Horizontal");
-                if (jumpState == JumpState.Grounded && Input.GetButtonDown("Jump"))
+                if (jumpState == JumpState.Grounded && jumpBufferCounter > 0f)
                     jumpState = JumpState.PrepareToJump;
                 else if (Input.GetButtonUp("Jump"))
                 {
                     stopJump = true;
                     Schedule<PlayerStopJump>().player = this;
+
+                    coyoteTimeCounter = 0f;
                 }
             }
             else
@@ -81,6 +105,7 @@ namespace Platformer.Mechanics
                     jumpState = JumpState.Jumping;
                     jump = true;
                     stopJump = false;
+                    jumpBufferCounter = 0f;
                     break;
                 case JumpState.Jumping:
                     if (!IsGrounded)
@@ -104,7 +129,7 @@ namespace Platformer.Mechanics
 
         protected override void ComputeVelocity()
         {
-            if (jump && IsGrounded)
+            if (jump && coyoteTimeCounter > 0f)
             {
                 velocity.y = jumpTakeOffSpeed * model.jumpModifier;
                 jump = false;
