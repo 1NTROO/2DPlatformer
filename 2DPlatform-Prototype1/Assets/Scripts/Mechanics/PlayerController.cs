@@ -264,6 +264,7 @@ namespace Platformer.Mechanics
 
                 PreserveMomentum = true;
 
+                print("Preserve Momentum Enabled");
 
                 wallJumpingCounter = 0f;
 
@@ -294,8 +295,13 @@ namespace Platformer.Mechanics
 
         private void EnableMomentum()
         {
-            if (IsWalled() || IsGrounded)
+            if (!PreserveMomentum)
+                return;
+            else if (isWallSliding || IsGrounded || (move.x != 0 && !isWallJumping))
+            {
                 PreserveMomentum = false;
+                print("Preserve Momentum Disabled");
+            }
         }
 
         public enum JumpState
