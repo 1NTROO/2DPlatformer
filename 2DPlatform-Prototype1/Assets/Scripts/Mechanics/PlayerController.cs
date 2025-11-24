@@ -6,6 +6,7 @@ using static Platformer.Core.Simulation;
 using Platformer.Model;
 using Platformer.Core;
 using System.ComponentModel;
+using UnityEngine.Analytics;
 
 namespace Platformer.Mechanics
 {
@@ -29,6 +30,10 @@ namespace Platformer.Mechanics
         /// Initial jump velocity at the start of a jump.
         /// </summary>
         public float jumpTakeOffSpeed = 7;
+        /// <summary>
+        /// Friction applied to horizontal movement.
+        /// </summary>
+        public float friction = 0.6f;
 
         /// <summary>
         /// Coyote time duration in seconds.
@@ -48,7 +53,7 @@ namespace Platformer.Mechanics
         /// Wall slide speed limit
         /// </summary>
         public float wallSlideSpeed = 3f;
-        private bool isWallSliding;
+        [SerializeField] private bool isWallSliding;
 
         /// <summary>
         /// Layer mask for wall detection
@@ -62,18 +67,20 @@ namespace Platformer.Mechanics
 
         [Header("Wall Jump Parameters")]
         private bool isWallJumping;
+        private bool wallJump;
         [SerializeField] private float wallJumpDirection;
 
         /// <summary>
         /// Time allowed to wall jump after leaving the wall
         /// </summary>
         [SerializeField] private float wallJumpingTime = 0.2f;
-        private float wallJumpingCounter;
+        private float wallJumpingTimeCounter;
 
         /// <summary>
         /// Duration of wall jump invincibility
         /// </summary>
         [SerializeField] private float wallJumpingDuration = 0.4f;
+        private float wallJumpingDurationCounter;
 
         /// <summary>
         /// Power of wall jump in x and y directions
@@ -118,9 +125,13 @@ namespace Platformer.Mechanics
                     jumpBufferCounter = jumpBufferTime;
                 else
                     jumpBufferCounter -= Time.deltaTime;
+
                 move.x = Input.GetAxis("Horizontal");
-                if (jumpState == JumpState.Grounded && jumpBufferCounter > 0f)
+                if (jumpState == JumpState.Grounded && jumpBufferCounter > 0f
+                    || (isWallSliding && wallJumpingDurationCounter > 0f && jumpBufferCounter > 0f))
+                {
                     jumpState = JumpState.PrepareToJump;
+                }
                 else if (Input.GetButtonUp("Jump"))
                 {
                     stopJump = true;
@@ -130,9 +141,7 @@ namespace Platformer.Mechanics
                 }
 
                 WallSlide();
-                WallJump();
-
-                EnableMomentum();
+                WallJumpPrep();
             }
             else
             {
@@ -145,13 +154,20 @@ namespace Platformer.Mechanics
         void UpdateJumpState()
         {
             jump = false;
+            wallJump = false;
             switch (jumpState)
             {
                 case JumpState.PrepareToJump:
                     jumpState = JumpState.Jumping;
-                    jump = true;
+                    if (!isWallSliding) jump = true;
+                    else if (isWallSliding)
+                    {
+                        wallJump = true;
+                        isWallSliding = false;
+                    }
                     stopJump = false;
                     jumpBufferCounter = 0f;
+                    
                     break;
                 case JumpState.Jumping:
                     if (!IsGrounded)
@@ -180,17 +196,54 @@ namespace Platformer.Mechanics
 
         protected override void ComputeVelocity()
         {
-            if (isWallJumping)
-            {
-                Debug.Log($"ComputeVelocity: isWallJumping = {isWallJumping}, Velocity = {velocity}");
-                targetVelocity.x = velocity.x;
-                return;
-            }
-
             if (jump && coyoteTimeCounter > 0f)
             {
                 velocity.y = jumpTakeOffSpeed * model.jumpModifier;
                 jump = false;
+            }
+            else if (wallJump && wallJumpingDurationCounter > 0f)
+            {
+                float closestWallDistance = float.MaxValue;
+                wallJumpDirection = 0f; // Default to no direction
+
+                foreach (var check in wallCheck)
+                {
+                    Collider2D wall = Physics2D.OverlapCircle(check.position, 0.25f, wallLayer);
+                    if (wall != null)
+                    {
+                        float distanceToWall = Mathf.Abs(check.position.x - transform.position.x);
+                        if (distanceToWall < closestWallDistance)
+                        {
+                            closestWallDistance = distanceToWall;
+                            wallJumpDirection = check.position.x > transform.position.x ? -1f : 1f;
+                        }
+                    }
+                }
+
+                if (wallJumpDirection != 0f)
+                {
+                    velocity.x = wallJumpDirection * wallJumpingPower.x;
+                    velocity.y = wallJumpingPower.y;
+                }
+                else
+                {
+                    Debug.Log("Wall Jump Skipped: No valid wallJumpDirection.");
+                }
+
+                // Log velocity after the wall jump
+                Debug.Log($"Velocity Debug: After Wall Jump - Velocity.x = {velocity.x}, Velocity.y = {velocity.y}");
+
+                isWallJumping = true;
+                wallJump = false;
+
+                targetVelocity.x = velocity.x;
+            }
+            if (isWallJumping)
+            {
+                // Blend player input with wall jump momentum after the duration
+                float inputInfluence = move.x * maxSpeed;
+                if (Mathf.Abs(inputInfluence) > 0.5f) velocity.x = Mathf.Lerp(velocity.x, inputInfluence, Time.deltaTime); // Reduced blending speed
+                Debug.Log($"Wall Jump Input Blending: Velocity.x = {velocity.x}, Input Influence = {inputInfluence}");            
             }
             else if (stopJump)
             {
@@ -201,24 +254,28 @@ namespace Platformer.Mechanics
                 }
             }
 
-
             if (move.x > 0.01f)
                 spriteRenderer.flipX = false;
             else if (move.x < -0.01f)
-                spriteRenderer.flipX = true;               
+                spriteRenderer.flipX = true;
 
             animator.SetBool("grounded", IsGrounded);
             animator.SetFloat("velocityY", velocity.y);
             animator.SetFloat("velocityX", Mathf.Abs(velocity.x) / maxSpeed);
 
-            targetVelocity = move * maxSpeed;
+            // Ensure targetVelocity does not overwrite wall jump momentum immediately
+            if (!isWallJumping)
+            {
+                targetVelocity = move * maxSpeed;
+            }
         }
 
         private bool IsWalled()
         {
             foreach (var check in wallCheck)
             {
-                if (Physics2D.OverlapCircle(check.position, 0.1f, wallLayer))
+                bool wallDetected = Physics2D.OverlapCircle(check.position, 0.1f, wallLayer);
+                if (wallDetected)
                 {
                     return true;
                 }
@@ -228,7 +285,7 @@ namespace Platformer.Mechanics
 
         private void WallSlide()
         {
-            if (IsWalled() && !IsGrounded && !isWallJumping && move.x != 0)
+            if (IsWalled() && !IsGrounded && !isWallJumping)
             {
                 isWallSliding = true;
                 velocity.y = Mathf.Clamp(velocity.y, -wallSlideSpeed, float.MaxValue);
@@ -239,68 +296,41 @@ namespace Platformer.Mechanics
             }
         }
 
-        private void WallJump()
+        private void WallJumpPrep()
         {
             if (isWallSliding)
             {
-                isWallJumping = false;
-                if (wallJumpDirection == 0f)
-                    wallJumpDirection = -Mathf.Sign(move.x);
-                wallJumpingCounter = wallJumpingTime;
-
-                CancelInvoke(nameof(StopWallJump));
+                foreach (var check in wallCheck)
+                {
+                    if (Physics2D.OverlapCircle(check.position, 0.1f, wallLayer))
+                    {
+                        wallJumpDirection = check.position.x > transform.position.x ? -1f : 1f;
+                        break;
+                    }
+                }
+                wallJumpingTimeCounter = wallJumpingTime;
             }
             else
             {
-                wallJumpingCounter -= Time.deltaTime;
+                wallJumpingTimeCounter -= Time.deltaTime;
             }
 
-            if (Input.GetButtonDown("Jump") && wallJumpingCounter > 0f)
+            if (Input.GetButtonDown("Jump") && wallJumpingTimeCounter > 0f)
             {
-                isWallJumping = true;
-                isWallSliding = false;
-                velocity.x = wallJumpDirection * jumpTakeOffSpeed * model.jumpModifier;
-                velocity.y = jumpTakeOffSpeed * model.jumpModifier * 0.5f;
+                wallJumpingDurationCounter = wallJumpingDuration;
+                wallJumpingTimeCounter = 0f;
+            }
 
-                PreserveMomentum = true;
+            if (isWallJumping)
+            {
+                wallJumpingDurationCounter -= Time.deltaTime;
+            }
 
-                print("Preserve Momentum Enabled");
-
-                wallJumpingCounter = 0f;
-
-                if (wallJumpDirection == (spriteRenderer.flipX ? 1f : -1f))
-                {
-                    spriteRenderer.flipX = !spriteRenderer.flipX;
-                }
-
-                Debug.Log($"Wall Jump! Velocity: {velocity}, Direction: {wallJumpDirection}");
-
+            if (wallJumpingDurationCounter <= 0f && isWallJumping || IsGrounded && isWallJumping)
+            {
+                wallJumpingDurationCounter = 0f;
+                isWallJumping = false;
                 wallJumpDirection = 0f;
-
-                Invoke(nameof(StopWallJump), wallJumpingDuration);
-            }
-
-            if (wallJumpingCounter <= 0f || IsGrounded)
-            {
-                wallJumpDirection = 0f;
-            }
-        }
-
-        private void StopWallJump()
-        {
-            isWallJumping = false;
-
-            targetVelocity.x = velocity.x;
-        }   
-
-        private void EnableMomentum()
-        {
-            if (!PreserveMomentum)
-                return;
-            else if (isWallSliding || IsGrounded || (move.x != 0 && !isWallJumping))
-            {
-                PreserveMomentum = false;
-                print("Preserve Momentum Disabled");
             }
         }
 

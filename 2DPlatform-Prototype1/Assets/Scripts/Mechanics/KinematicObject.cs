@@ -30,12 +30,6 @@ namespace Platformer.Mechanics
         /// <value></value>
         public bool IsGrounded { get; private set; }
 
-        /// <summary>
-        /// Flag to preserve horizontal momentum.
-        /// </summary>
-        public bool PreserveMomentum { get; set; } = false;
-
-
         protected Vector2 targetVelocity;
         protected Vector2 groundNormal;
         protected Rigidbody2D body;
@@ -96,7 +90,7 @@ namespace Platformer.Mechanics
 
         protected virtual void Update()
         {
-            targetVelocity = Vector2.zero;
+            targetVelocity = velocity;
             ComputeVelocity();
         }
 
@@ -113,12 +107,7 @@ namespace Platformer.Mechanics
             else
                 velocity += Physics2D.gravity * Time.deltaTime;
 
-            float tempVelocityX = velocity.x;
             velocity.x = targetVelocity.x;
-            if (PreserveMomentum)
-            {
-                velocity.x = tempVelocityX;
-            }
 
             IsGrounded = false;
 
