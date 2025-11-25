@@ -156,7 +156,11 @@ namespace Platformer.Mechanics
                 WallSlide();
                 WallJumpPrep();
 
+<<<<<<< HEAD
                 if (Input.GetButtonDown("InverseGravity") && hasLandedAfterGravityInverse)
+=======
+                if (Input.GetButtonDown("InverseGravity"))
+>>>>>>> 462757a3ed58cd747ba9b6228f283f57d61635d5
                 {
                     InverseGravity();
                 }
