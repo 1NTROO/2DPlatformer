@@ -87,6 +87,9 @@ namespace Platformer.Mechanics
         /// </summary>
         [SerializeField] private Vector2 wallJumpingPower = new Vector2(8f, 16f);
 
+        [Header("Gravity Inversion")]
+        private bool hasLandedAfterGravityInverse = true;
+
         [Header("Player States")]
         public JumpState jumpState = JumpState.Grounded;
         private bool stopJump;
@@ -125,8 +128,18 @@ namespace Platformer.Mechanics
                     jumpBufferCounter = jumpBufferTime;
                 else
                     jumpBufferCounter -= Time.deltaTime;
-
-                move.x = Input.GetAxis("Horizontal");
+                
+                if (!hasLandedAfterGravityInverse && IsGrounded)
+                {
+                    hasLandedAfterGravityInverse = true;
+                    Debug.Log("Player has landed after gravity inversion.");
+                }
+                float tempGravityDirection = GravityDirection;
+                if (!hasLandedAfterGravityInverse) 
+                {
+                    tempGravityDirection *= -1f;
+                }
+                move.x = tempGravityDirection * Input.GetAxis("Horizontal");
                 if (jumpState == JumpState.Grounded && jumpBufferCounter > 0f
                     || (isWallSliding && wallJumpingDurationCounter > 0f && jumpBufferCounter > 0f))
                 {
@@ -142,6 +155,11 @@ namespace Platformer.Mechanics
 
                 WallSlide();
                 WallJumpPrep();
+
+                if (Input.GetButtonDown("InverseGravity"))
+                {
+                    InverseGravity();
+                }
             }
             else
             {
@@ -230,9 +248,6 @@ namespace Platformer.Mechanics
                     Debug.Log("Wall Jump Skipped: No valid wallJumpDirection.");
                 }
 
-                // Log velocity after the wall jump
-                Debug.Log($"Velocity Debug: After Wall Jump - Velocity.x = {velocity.x}, Velocity.y = {velocity.y}");
-
                 isWallJumping = true;
                 wallJump = false;
 
@@ -254,9 +269,9 @@ namespace Platformer.Mechanics
                 }
             }
 
-            if (move.x > 0.01f)
+            if (move.x > 0.01f || (GravityDirection == -1f && move.x < -0.01f))
                 spriteRenderer.flipX = false;
-            else if (move.x < -0.01f)
+            else if (move.x < -0.01f || (GravityDirection == -1f && move.x > 0.01f))
                 spriteRenderer.flipX = true;
 
             animator.SetBool("grounded", IsGrounded);
@@ -332,6 +347,18 @@ namespace Platformer.Mechanics
                 isWallJumping = false;
                 wallJumpDirection = 0f;
             }
+        }
+
+        public void InverseGravity()
+        {
+            Physics2D.gravity *= -1;
+            GravityDirection *= -1;
+
+            spriteRenderer.flipY = !spriteRenderer.flipY;
+            jumpTakeOffSpeed *= -1;
+
+            SetGrounded(false);
+            hasLandedAfterGravityInverse = false;
         }
 
         public enum JumpState
