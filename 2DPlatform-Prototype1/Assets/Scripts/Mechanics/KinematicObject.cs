@@ -30,6 +30,11 @@ namespace Platformer.Mechanics
         /// <value></value>
         public bool IsGrounded { get; private set; }
 
+        /// <summary>
+        /// The direction of gravity affecting this object. 1 is down, -1 is up.
+        /// </summary>
+        public float GravityDirection { get; set; } = 1f;
+
         protected Vector2 targetVelocity;
         protected Vector2 groundNormal;
         protected Rigidbody2D body;
@@ -137,8 +142,9 @@ namespace Platformer.Mechanics
                 {
                     var currentNormal = hitBuffer[i].normal;
 
+                    print("Normal: " + currentNormal);
                     //is this surface flat enough to land on?
-                    if (currentNormal.y > minGroundNormalY)
+                    if (minGroundNormalY < (GravityDirection == 1f ? currentNormal.y : -currentNormal.y))
                     {
                         IsGrounded = true;
                         // if moving up, change the groundNormal to new surface normal.
@@ -172,5 +178,9 @@ namespace Platformer.Mechanics
             body.position = body.position + move.normalized * distance;
         }
 
+        protected void SetGrounded(bool b)
+        {
+            IsGrounded = b;
+        }
     }
 }
