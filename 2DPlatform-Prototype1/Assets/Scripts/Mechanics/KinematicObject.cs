@@ -106,8 +106,8 @@ namespace Platformer.Mechanics
 
         protected virtual void FixedUpdate()
         {
-            //if already falling, fall faster than the jump speed, otherwise use normal gravity.
-            if (velocity.y < 0)
+            //if already falling after a jump, fall faster than the jump speed, otherwise use normal gravity.
+            if (Mathf.Sign(velocity.y) == -GravityDirection)
                 velocity += gravityModifier * Physics2D.gravity * Time.deltaTime;
             else
                 velocity += Physics2D.gravity * Time.deltaTime;
@@ -141,8 +141,6 @@ namespace Platformer.Mechanics
                 for (var i = 0; i < count; i++)
                 {
                     var currentNormal = hitBuffer[i].normal;
-
-                    print("Normal: " + currentNormal);
                     //is this surface flat enough to land on?
                     if (minGroundNormalY < (GravityDirection == 1f ? currentNormal.y : -currentNormal.y))
                     {

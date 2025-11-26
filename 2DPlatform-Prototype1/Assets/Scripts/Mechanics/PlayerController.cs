@@ -7,6 +7,7 @@ using Platformer.Model;
 using Platformer.Core;
 using System.ComponentModel;
 using UnityEngine.Analytics;
+using Cinemachine;
 
 namespace Platformer.Mechanics
 {
@@ -47,6 +48,25 @@ namespace Platformer.Mechanics
         public float jumpBufferTime = 0.2f;
         private float jumpBufferCounter;
 
+        /// <summary>
+        /// Player direction enum
+        /// </summary>
+        public enum PlayerDirection
+        {
+            Right,
+            Left,
+            Up,
+            Down
+        }
+
+        /// <summary>
+        /// Horizontal direction the player is facing.
+        /// </summary>
+        public PlayerDirection horizontalDirection = PlayerDirection.Right;
+        /// <summary>
+        /// Vertical direction the player is facing.
+        /// </summary>
+        public PlayerDirection verticalDirection = PlayerDirection.Up;
 
         [Header("Wall Slide Parameters")]
         /// <summary>
@@ -88,7 +108,10 @@ namespace Platformer.Mechanics
         [SerializeField] private Vector2 wallJumpingPower = new Vector2(8f, 16f);
 
         [Header("Gravity Inversion")]
-        private bool hasLandedAfterGravityInverse = true;
+        /// <summary>
+        /// Direction of gravity: 1 for normal, -1 for inverted
+        /// </summary>
+        [SerializeField] private bool hasLandedAfterGravityInverse { get; set; } = true;
 
         [Header("Player States")]
         public JumpState jumpState = JumpState.Grounded;
@@ -103,6 +126,7 @@ namespace Platformer.Mechanics
         SpriteRenderer spriteRenderer;
         internal Animator animator;
         readonly PlatformerModel model = Simulation.GetModel<PlatformerModel>();
+        CinemachineBrain cineMachine;
 
         public Bounds Bounds => collider2d.bounds;
 
@@ -111,8 +135,11 @@ namespace Platformer.Mechanics
             health = GetComponent<Health>();
             audioSource = GetComponent<AudioSource>();
             collider2d = GetComponent<Collider2D>();
-            spriteRenderer = GetComponent<SpriteRenderer>();
-            animator = GetComponent<Animator>();
+            spriteRenderer = GetComponentInChildren<SpriteRenderer>();
+            animator = GetComponentInChildren<Animator>();
+            // cineMachine = Camera.main.GetComponent<Cinemachine.CinemachineBrain>();
+
+            // cineMachine.m_WorldUpOverride = transform;
         }
 
         protected override void Update()
@@ -156,11 +183,7 @@ namespace Platformer.Mechanics
                 WallSlide();
                 WallJumpPrep();
 
-<<<<<<< HEAD
                 if (Input.GetButtonDown("InverseGravity") && hasLandedAfterGravityInverse)
-=======
-                if (Input.GetButtonDown("InverseGravity"))
->>>>>>> 462757a3ed58cd747ba9b6228f283f57d61635d5
                 {
                     InverseGravity();
                 }
@@ -273,10 +296,7 @@ namespace Platformer.Mechanics
                 }
             }
 
-            if (move.x > 0.01f || (GravityDirection == -1f && move.x < -0.01f))
-                spriteRenderer.flipX = false;
-            else if (move.x < -0.01f || (GravityDirection == -1f && move.x > 0.01f))
-                spriteRenderer.flipX = true;
+            FlipHorizontal();
 
             animator.SetBool("grounded", IsGrounded);
             animator.SetFloat("velocityY", velocity.y);
@@ -353,12 +373,81 @@ namespace Platformer.Mechanics
             }
         }
 
+        private void FlipHorizontal()
+        {
+            bool canFlip = false;
+            switch (verticalDirection)
+            {
+                case PlayerDirection.Up:
+                    if (!hasLandedAfterGravityInverse)
+                    {
+                        if (HorizontalFlipCheck(horizontalDirection, true))
+                            canFlip = true;
+                    }
+                    else if (HorizontalFlipCheck(horizontalDirection, false))
+                            canFlip = true;
+                    break;
+                case PlayerDirection.Down:
+                    if (!hasLandedAfterGravityInverse)
+                    {
+                        if (HorizontalFlipCheck(horizontalDirection, false))
+                            canFlip = true;
+                    }
+                    else if (HorizontalFlipCheck(horizontalDirection, true))
+                            canFlip = true;
+                    break;
+                default:
+                    break;
+
+            }
+            
+            if (canFlip)
+            {
+                if (horizontalDirection == PlayerDirection.Right)
+                    horizontalDirection = PlayerDirection.Left;
+                else horizontalDirection = PlayerDirection.Right;
+                Vector3 scaler = transform.localScale;
+                scaler.x *= -1;
+                transform.localScale = scaler;
+            }
+        }
+
+        private bool HorizontalFlipCheck(PlayerDirection horizontalDir, bool upsideDown = false)
+        {
+            bool b = false;
+
+            if (horizontalDir == PlayerDirection.Right)
+            {
+                if (upsideDown ? move.x > 0 : move.x < 0)
+                    b = true;
+            }
+            else if (horizontalDir == PlayerDirection.Left)
+            {
+                if (upsideDown ? move.x < 0 : move.x > 0)
+                    b = true;
+            }
+
+            return b;
+        }
+
+        private void FlipVertical()
+        {
+            if (verticalDirection == PlayerDirection.Down)
+                verticalDirection = PlayerDirection.Up;
+            else verticalDirection = PlayerDirection.Down;
+            Vector3 scaler = transform.localScale;
+            scaler.y *= -1;
+            transform.localScale = scaler;
+        }
+
         public void InverseGravity()
         {
             Physics2D.gravity *= -1;
             GravityDirection *= -1;
 
-            spriteRenderer.flipY = !spriteRenderer.flipY;
+            Debug.Log($"Gravity Inverted: New Gravity = {Physics2D.gravity}, GravityDirection = {GravityDirection}");
+
+            FlipVertical();
             jumpTakeOffSpeed *= -1;
 
             SetGrounded(false);
