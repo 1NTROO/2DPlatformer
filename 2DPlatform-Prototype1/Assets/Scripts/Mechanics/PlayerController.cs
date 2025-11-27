@@ -9,6 +9,7 @@ using System.ComponentModel;
 using UnityEngine.Analytics;
 using Cinemachine;
 using Platformer.View;
+using UnityEditor.Rendering;
 
 namespace Platformer.Mechanics
 {
@@ -21,6 +22,8 @@ namespace Platformer.Mechanics
         public AudioClip jumpAudio;
         public AudioClip respawnAudio;
         public AudioClip ouchAudio;
+        public AudioClip gravityInverseAudio;
+        public AudioClip landAudio;
 
 
         [Header("Player Parameters")]
@@ -167,6 +170,7 @@ namespace Platformer.Mechanics
                     trail.emitting = false;
                     cinematicCameraSwitcher.SwitchState();
                     GameController.Instance.cameraShake.TriggerShake(impulseSource);
+                    AudioManager.Instance.PlayAudio(landAudio, transform.position, 0.25f, 1f);
                 }
                 float tempGravityDirection = GravityDirection;
                 if (!hasLandedAfterGravityInverse) 
@@ -458,6 +462,8 @@ namespace Platformer.Mechanics
 
             SetGrounded(false);
             hasLandedAfterGravityInverse = false;
+
+            AudioManager.Instance.PlayAudio(gravityInverseAudio, transform.position, 0.1f, 0.6f);
         }
 
         public enum JumpState

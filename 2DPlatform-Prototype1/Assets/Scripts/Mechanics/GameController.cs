@@ -20,6 +20,7 @@ namespace Platformer.Mechanics
         //conveniently configured inside the inspector.
         public PlatformerModel model = Simulation.GetModel<PlatformerModel>();
         public CameraShake cameraShake;
+        public AudioManager audioManager;
 
         void OnEnable()
         {
