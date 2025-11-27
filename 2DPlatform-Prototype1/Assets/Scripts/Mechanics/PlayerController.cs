@@ -119,6 +119,7 @@ namespace Platformer.Mechanics
         private bool stopJump;
         /*internal new*/ public Collider2D collider2d;
         /*internal new*/ public AudioSource audioSource;
+        [SerializeField] private CinematicCameraSwitcher cinematicCameraSwitcher;
         public Health health;
         public bool controlEnabled = true;
 
@@ -128,7 +129,7 @@ namespace Platformer.Mechanics
         internal Animator animator;
         readonly PlatformerModel model = Simulation.GetModel<PlatformerModel>();
         private CinemachineImpulseSource impulseSource;
-        [SerializeField] private CinematicCameraSwitcher cinematicCameraSwitcher;
+        private TrailRenderer trail; 
 
         public Bounds Bounds => collider2d.bounds;
 
@@ -140,6 +141,7 @@ namespace Platformer.Mechanics
             spriteRenderer = GetComponentInChildren<SpriteRenderer>();
             animator = GetComponentInChildren<Animator>();
             impulseSource = GetComponent<CinemachineImpulseSource>();
+            trail = GetComponentInChildren<TrailRenderer>();
             // cineMachine = Camera.main.GetComponent<Cinemachine.CinemachineBrain>();
 
             // cineMachine.m_WorldUpOverride = transform;
@@ -162,6 +164,7 @@ namespace Platformer.Mechanics
                 if (!hasLandedAfterGravityInverse && IsGrounded)
                 {
                     hasLandedAfterGravityInverse = true;
+                    trail.emitting = false;
                     cinematicCameraSwitcher.SwitchState();
                     GameController.Instance.cameraShake.TriggerShake(impulseSource);
                 }
@@ -169,6 +172,7 @@ namespace Platformer.Mechanics
                 if (!hasLandedAfterGravityInverse) 
                 {
                     tempGravityDirection *= -1f;
+                    trail.emitting = true;
                 }
                 move.x = tempGravityDirection * Input.GetAxis("Horizontal");
                 if (jumpState == JumpState.Grounded && jumpBufferCounter > 0f
