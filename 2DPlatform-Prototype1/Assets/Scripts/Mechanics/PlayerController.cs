@@ -8,6 +8,7 @@ using Platformer.Core;
 using System.ComponentModel;
 using UnityEngine.Analytics;
 using Cinemachine;
+using Platformer.View;
 
 namespace Platformer.Mechanics
 {
@@ -126,7 +127,8 @@ namespace Platformer.Mechanics
         SpriteRenderer spriteRenderer;
         internal Animator animator;
         readonly PlatformerModel model = Simulation.GetModel<PlatformerModel>();
-        CinemachineBrain cineMachine;
+        private CinemachineImpulseSource impulseSource;
+        [SerializeField] private CinematicCameraSwitcher cinematicCameraSwitcher;
 
         public Bounds Bounds => collider2d.bounds;
 
@@ -137,6 +139,7 @@ namespace Platformer.Mechanics
             collider2d = GetComponent<Collider2D>();
             spriteRenderer = GetComponentInChildren<SpriteRenderer>();
             animator = GetComponentInChildren<Animator>();
+            impulseSource = GetComponent<CinemachineImpulseSource>();
             // cineMachine = Camera.main.GetComponent<Cinemachine.CinemachineBrain>();
 
             // cineMachine.m_WorldUpOverride = transform;
@@ -159,7 +162,8 @@ namespace Platformer.Mechanics
                 if (!hasLandedAfterGravityInverse && IsGrounded)
                 {
                     hasLandedAfterGravityInverse = true;
-                    Debug.Log("Player has landed after gravity inversion.");
+                    cinematicCameraSwitcher.SwitchState();
+                    GameController.Instance.cameraShake.TriggerShake(impulseSource);
                 }
                 float tempGravityDirection = GravityDirection;
                 if (!hasLandedAfterGravityInverse) 
@@ -444,8 +448,6 @@ namespace Platformer.Mechanics
         {
             Physics2D.gravity *= -1;
             GravityDirection *= -1;
-
-            Debug.Log($"Gravity Inverted: New Gravity = {Physics2D.gravity}, GravityDirection = {GravityDirection}");
 
             FlipVertical();
             jumpTakeOffSpeed *= -1;

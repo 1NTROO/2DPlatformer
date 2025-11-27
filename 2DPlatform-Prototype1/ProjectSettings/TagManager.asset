@@ -39,8 +39,20 @@ TagManager:
   - 
   - 
   m_SortingLayers:
+  - name: Background
+    uniqueID: 2883018691
+    locked: 0
   - name: Default
     uniqueID: 0
+    locked: 0
+  - name: MiscObj
+    uniqueID: 3540751753
+    locked: 0
+  - name: LevelObj
+    uniqueID: 250013017
+    locked: 0
+  - name: Player
+    uniqueID: 298844407
     locked: 0
   m_RenderingLayers:
   - Default
