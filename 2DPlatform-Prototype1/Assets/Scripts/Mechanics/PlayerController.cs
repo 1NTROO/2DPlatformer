@@ -9,7 +9,7 @@ using System.ComponentModel;
 using UnityEngine.Analytics;
 using Cinemachine;
 using Platformer.View;
-using UnityEditor.Rendering;
+using Microsoft.Unity.VisualStudio.Editor;
 
 namespace Platformer.Mechanics
 {
@@ -25,6 +25,7 @@ namespace Platformer.Mechanics
         public AudioClip gravityInverseAudio;
         public AudioClip landAudio;
 
+        public GameObject playerFlipImage;
 
         [Header("Player Parameters")]
         /// <summary>
@@ -145,6 +146,8 @@ namespace Platformer.Mechanics
             animator = GetComponentInChildren<Animator>();
             impulseSource = GetComponent<CinemachineImpulseSource>();
             trail = GetComponentInChildren<TrailRenderer>();
+
+            Physics2D.IgnoreLayerCollision(3, 8, true);
             // cineMachine = Camera.main.GetComponent<Cinemachine.CinemachineBrain>();
 
             // cineMachine.m_WorldUpOverride = transform;
@@ -168,6 +171,7 @@ namespace Platformer.Mechanics
                 {
                     hasLandedAfterGravityInverse = true;
                     trail.emitting = false;
+                    jumpTakeOffSpeed *= -1f;
                     cinematicCameraSwitcher.SwitchState();
                     GameController.Instance.cameraShake.TriggerShake(impulseSource);
                     AudioManager.Instance.PlayAudio(landAudio, transform.position, 0.25f, 1f);
@@ -450,6 +454,10 @@ namespace Platformer.Mechanics
             Vector3 scaler = transform.localScale;
             scaler.y *= -1;
             transform.localScale = scaler;
+            
+            Vector3 playerFlipImageScale = playerFlipImage.transform.localScale;
+            playerFlipImageScale.y *= -1;
+            playerFlipImage.transform.localScale = playerFlipImageScale;
         }
 
         public void InverseGravity()
@@ -458,7 +466,6 @@ namespace Platformer.Mechanics
             GravityDirection *= -1;
 
             FlipVertical();
-            jumpTakeOffSpeed *= -1;
 
             SetGrounded(false);
             hasLandedAfterGravityInverse = false;
