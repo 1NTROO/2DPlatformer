@@ -176,13 +176,11 @@ namespace Platformer.Mechanics
                     GameController.Instance.cameraShake.TriggerShake(impulseSource);
                     AudioManager.Instance.PlayAudio(landAudio, transform.position, 0.25f, 1f);
                 }
-                float tempGravityDirection = GravityDirection;
                 if (!hasLandedAfterGravityInverse) 
                 {
-                    tempGravityDirection *= -1f;
                     trail.emitting = true;
                 }
-                move.x = tempGravityDirection * Input.GetAxis("Horizontal");
+                move.x = Input.GetAxis("Horizontal") * (hasLandedAfterGravityInverse ? 1f : -1f);
                 if (jumpState == JumpState.Grounded && jumpBufferCounter > 0f
                     || (isWallSliding && wallJumpingDurationCounter > 0f && jumpBufferCounter > 0f))
                 {
