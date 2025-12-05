@@ -147,7 +147,8 @@ TextureImporter:
     secondaryTextures: []
     spriteCustomMetadata:
       entries: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      robot10-hit6_0: 1297013313406028906
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

@@ -172,7 +172,7 @@ namespace Platformer.Mechanics
                     hasLandedAfterGravityInverse = true;
                     trail.emitting = false;
                     jumpTakeOffSpeed *= -1f;
-                    cinematicCameraSwitcher.SwitchState();
+                    // cinematicCameraSwitcher.SwitchState();
                     GameController.Instance.cameraShake.TriggerShake(impulseSource);
                     AudioManager.Instance.PlayAudio(landAudio, transform.position, 0.25f, 1f);
                 }
@@ -470,6 +470,8 @@ namespace Platformer.Mechanics
 
             SetGrounded(false);
             hasLandedAfterGravityInverse = false;
+
+            cinematicCameraSwitcher.SwitchState();
 
             AudioManager.Instance.PlayAudio(gravityInverseAudio, transform.position, 0.1f, 0.6f);
         }

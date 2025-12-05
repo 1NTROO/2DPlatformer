@@ -147,7 +147,8 @@ TextureImporter:
     secondaryTextures: []
     spriteCustomMetadata:
       entries: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      robot10-climb13_0: 7281513514620675357
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
