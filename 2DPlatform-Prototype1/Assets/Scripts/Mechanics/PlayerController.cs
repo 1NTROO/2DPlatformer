@@ -9,7 +9,6 @@ using System.ComponentModel;
 using UnityEngine.Analytics;
 using Cinemachine;
 using Platformer.View;
-using Microsoft.Unity.VisualStudio.Editor;
 
 namespace Platformer.Mechanics
 {
@@ -24,6 +23,7 @@ namespace Platformer.Mechanics
         public AudioClip ouchAudio;
         public AudioClip gravityInverseAudio;
         public AudioClip landAudio;
+        public AudioClip normalLandAudio;
 
         public GameObject playerFlipImage;
 
@@ -196,8 +196,8 @@ namespace Platformer.Mechanics
                     coyoteTimeCounter = 0f;
                 }
 
-                WallSlide();
-                WallJumpPrep();
+                // WallSlide();
+                // WallJumpPrep();
 
                 if (Input.GetButtonDown("InverseGravity") && hasLandedAfterGravityInverse)
                 {
@@ -241,6 +241,7 @@ namespace Platformer.Mechanics
                     if (IsGrounded)
                     {
                         Schedule<PlayerLanded>().player = this;
+                        AudioManager.Instance.PlayAudio(normalLandAudio, transform.position);
                         jumpState = JumpState.Landed;
                     }
                     break;
@@ -325,69 +326,69 @@ namespace Platformer.Mechanics
             }
         }
 
-        private bool IsWalled()
-        {
-            foreach (var check in wallCheck)
-            {
-                bool wallDetected = Physics2D.OverlapCircle(check.position, 0.1f, wallLayer);
-                if (wallDetected)
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
+        // private bool IsWalled()
+        // {
+        //     foreach (var check in wallCheck)
+        //     {
+        //         bool wallDetected = Physics2D.OverlapCircle(check.position, 0.1f, wallLayer);
+        //         if (wallDetected)
+        //         {
+        //             return true;
+        //         }
+        //     }
+        //     return false;
+        // }
 
-        private void WallSlide()
-        {
-            if (IsWalled() && !IsGrounded && !isWallJumping)
-            {
-                isWallSliding = true;
-                velocity.y = Mathf.Clamp(velocity.y, -wallSlideSpeed, float.MaxValue);
-            }
-            else
-            {
-                isWallSliding = false;
-            }
-        }
+        // private void WallSlide()
+        // {
+        //     if (IsWalled() && !IsGrounded && !isWallJumping)
+        //     {
+        //         isWallSliding = true;
+        //         velocity.y = Mathf.Clamp(velocity.y, -wallSlideSpeed, float.MaxValue);
+        //     }
+        //     else
+        //     {
+        //         isWallSliding = false;
+        //     }
+        // }
 
-        private void WallJumpPrep()
-        {
-            if (isWallSliding)
-            {
-                foreach (var check in wallCheck)
-                {
-                    if (Physics2D.OverlapCircle(check.position, 0.1f, wallLayer))
-                    {
-                        wallJumpDirection = check.position.x > transform.position.x ? -1f : 1f;
-                        break;
-                    }
-                }
-                wallJumpingTimeCounter = wallJumpingTime;
-            }
-            else
-            {
-                wallJumpingTimeCounter -= Time.deltaTime;
-            }
+        // private void WallJumpPrep()
+        // {
+        //     if (isWallSliding)
+        //     {
+        //         foreach (var check in wallCheck)
+        //         {
+        //             if (Physics2D.OverlapCircle(check.position, 0.1f, wallLayer))
+        //             {
+        //                 wallJumpDirection = check.position.x > transform.position.x ? -1f : 1f;
+        //                 break;
+        //             }
+        //         }
+        //         wallJumpingTimeCounter = wallJumpingTime;
+        //     }
+        //     else
+        //     {
+        //         wallJumpingTimeCounter -= Time.deltaTime;
+        //     }
 
-            if (Input.GetButtonDown("Jump") && wallJumpingTimeCounter > 0f)
-            {
-                wallJumpingDurationCounter = wallJumpingDuration;
-                wallJumpingTimeCounter = 0f;
-            }
+        //     if (Input.GetButtonDown("Jump") && wallJumpingTimeCounter > 0f)
+        //     {
+        //         wallJumpingDurationCounter = wallJumpingDuration;
+        //         wallJumpingTimeCounter = 0f;
+        //     }
 
-            if (isWallJumping)
-            {
-                wallJumpingDurationCounter -= Time.deltaTime;
-            }
+        //     if (isWallJumping)
+        //     {
+        //         wallJumpingDurationCounter -= Time.deltaTime;
+        //     }
 
-            if (wallJumpingDurationCounter <= 0f && isWallJumping || IsGrounded && isWallJumping)
-            {
-                wallJumpingDurationCounter = 0f;
-                isWallJumping = false;
-                wallJumpDirection = 0f;
-            }
-        }
+        //     if (wallJumpingDurationCounter <= 0f && isWallJumping || IsGrounded && isWallJumping)
+        //     {
+        //         wallJumpingDurationCounter = 0f;
+        //         isWallJumping = false;
+        //         wallJumpDirection = 0f;
+        //     }
+        // }
 
         private void FlipHorizontal()
         {
