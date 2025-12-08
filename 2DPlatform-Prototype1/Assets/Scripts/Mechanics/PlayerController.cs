@@ -314,7 +314,7 @@ namespace Platformer.Mechanics
             FlipHorizontal();
 
             animator.SetBool("grounded", IsGrounded);
-            animator.SetFloat("velocityY", velocity.y);
+            animator.SetFloat("velocityY", GravityDirection * velocity.y);
             animator.SetFloat("velocityX", Mathf.Abs(velocity.x) / maxSpeed);
 
             // Ensure targetVelocity does not overwrite wall jump momentum immediately
