@@ -6,6 +6,7 @@ TagManager:
   tags:
   - TutorialRequirement
   - DNI
+  - FinishLine
   layers:
   - Default
   - TransparentFX
