@@ -147,7 +147,7 @@ namespace Platformer.Mechanics
             impulseSource = GetComponent<CinemachineImpulseSource>();
             trail = GetComponentInChildren<TrailRenderer>();
 
-            Physics2D.IgnoreLayerCollision(3, 8, true);
+            // Physics2D.IgnoreLayerCollision(3, 8, true);
             // cineMachine = Camera.main.GetComponent<Cinemachine.CinemachineBrain>();
 
             // cineMachine.m_WorldUpOverride = transform;
