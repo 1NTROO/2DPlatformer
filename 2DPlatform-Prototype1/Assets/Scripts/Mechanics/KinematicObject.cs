@@ -35,6 +35,15 @@ namespace Platformer.Mechanics
         /// </summary>
         public float GravityDirection { get; set; } = 1f;
 
+        /// <summary>
+        /// Timer for jump immunity after bouncing or jumping.
+        /// </summary>
+        public float JumpImmunityTimer { get; set; } = 0f;
+        /// <summary>
+        /// Duration of jump immunity after bouncing or jumping.
+        /// </summary>
+        public float JumpImmunityDuration { get; set; } = 0.35f;
+
         protected Vector2 targetVelocity;
         protected Vector2 groundNormal;
         protected Rigidbody2D body;
@@ -124,6 +133,8 @@ namespace Platformer.Mechanics
 
             PerformMovement(move, false);
 
+            JumpImmunityTimer -= Time.deltaTime;
+
             move = Vector2.up * deltaPosition.y;
 
             PerformMovement(move, true);
@@ -162,11 +173,12 @@ namespace Platformer.Mechanics
                             velocity = velocity - projection * currentNormal;
                         }
                     }
-                    else
+                    else if (JumpImmunityTimer <= 0f)
                     {
                         //We are airborne, but hit something, so cancel vertical up and horizontal velocity.
                         velocity.x *= 0;
                         velocity.y = GravityDirection == 1f ? Mathf.Min(velocity.y, 0) : Mathf.Max(velocity.y, 0);
+                        print("Hit something!");
                     }
                     //remove shellDistance from actual move distance.
                     var modifiedDistance = hitBuffer[i].distance - shellRadius;

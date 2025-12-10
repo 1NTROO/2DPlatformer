@@ -226,6 +226,7 @@ namespace Platformer.Mechanics
                     }
                     stopJump = false;
                     jumpBufferCounter = 0f;
+                    JumpImmunityTimer = JumpImmunityDuration;
                     
                     break;
                 case JumpState.Jumping:
