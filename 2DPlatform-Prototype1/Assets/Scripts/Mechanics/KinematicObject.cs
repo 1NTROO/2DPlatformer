@@ -43,9 +43,8 @@ namespace Platformer.Mechanics
         /// Duration of jump immunity after bouncing or jumping.
         /// </summary>
         public float JumpImmunityDuration { get; set; } = 0.35f;
-        public float SlopeMomentumTimer;
-        public float SlopeMomentumDuration = 0.1f;
 
+        protected Vector2 xMovementGroundNormal;
         protected Vector2 targetVelocity;
         protected Vector2 groundNormal;
         protected bool nextToSlope;
@@ -135,6 +134,8 @@ namespace Platformer.Mechanics
 
             nextToSlope = false;
 
+            xMovementGroundNormal = Vector2.zero;
+
             var deltaPosition = velocity * Time.deltaTime;
 
             var moveAlongGround = new Vector2(groundNormal.y, -groundNormal.x);
@@ -148,8 +149,6 @@ namespace Platformer.Mechanics
             move = Vector2.up * deltaPosition.y;
 
             PerformMovement(move, true);
-
-            SlopeMomentumTimer += Time.deltaTime;
             
             // if (SlopeMomentumTimer > SlopeMomentumDuration) ForceToGroundAfterSlope();
 
@@ -173,6 +172,15 @@ namespace Platformer.Mechanics
                     {
                         IsGrounded = true;
                         // if moving up, change the groundNormal to new surface normal.
+                        if (!yMovement)
+                        {
+                            xMovementGroundNormal = currentNormal;
+                        }
+                        else if (yMovement && xMovementGroundNormal != Vector2.zero && xMovementGroundNormal != currentNormal)
+                        {
+                            Debug.Log("flipped");
+                            currentNormal = xMovementGroundNormal;
+                        }
                         if (yMovement)
                         {
                             groundNormal = currentNormal;
@@ -181,31 +189,19 @@ namespace Platformer.Mechanics
                     }
                     if (IsGrounded)
                     {
+                        currentNormal.x *= -GravityDirection;
                         //how much of our velocity aligns with surface normal?
                         var projection = Vector2.Dot(velocity, currentNormal);
-                        Debug.Log("Projection: " + projection + " in mode yMovement: " + yMovement);
+                        // var scaledProjection = velocity.normalized * projection;
+                        Debug.Log("Velocity: " + velocity);
+                        Debug.Log("Projection: " + projection);
                         if (projection < 0)
                         {
                             //slower velocity if moving against the normal (up a hill).
-                            Debug.Log("Velocity before adjustment: " + velocity);
-                            velocity.y -= velocity.y * currentNormal.y * currentNormal.y;
-                            if (nextToSlope)
-                            {
-                                velocity.y = GravityDirection * 2f;
-                                nextToSlope = false;
-                            }
-                            Debug.Log("Adjusting velocity against normal: " + currentNormal);
-                            Debug.Log("New velocity: " + velocity);
+                            velocity -= projection * currentNormal;
+                            Debug.Log("Velocity after projection: " + velocity);
                         }
-                        if (currentNormal.y != GravityDirection && !yMovement)
-                        {
-                            nextToSlope = true;                        
-                        }
-                        if (currentNormal.y != GravityDirection && yMovement)
-                        {
-                            if (!IsOnSlope) IsOnSlope = true;
-                            SlopeMomentumTimer = 0;
-                        }
+                        // if (GravityDirection == 1f ? velocity.y < 0 : velocity.x > 0) velocity.y = 0;
                     }
                     else if (JumpImmunityTimer <= 0f)
                     {
