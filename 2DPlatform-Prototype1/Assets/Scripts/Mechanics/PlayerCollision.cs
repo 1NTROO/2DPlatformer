@@ -5,7 +5,7 @@ namespace Platformer.Mechanics
     public class PlayerCollision : MonoBehaviour
     {
         [SerializeField] TMPro.TextMeshProUGUI lapsText;
-        private float laps = 0;
+        private float laps = -1;
 
         private Rigidbody2D rb;
         private Collider2D coll;
@@ -15,7 +15,7 @@ namespace Platformer.Mechanics
             coll = GetComponent<Collider2D>();
             if (lapsText != null)
             {
-                lapsText.text = laps.ToString() + " Laps";
+                lapsText.text = "0 Laps";
             }
         }
 

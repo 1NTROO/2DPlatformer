@@ -43,9 +43,17 @@ namespace Platformer.Mechanics
         /// Duration of jump immunity after bouncing or jumping.
         /// </summary>
         public float JumpImmunityDuration { get; set; } = 0.35f;
+        public float SlopeMomentumTimer;
+        public float SlopeMomentumDuration = 0.1f;
 
         protected Vector2 targetVelocity;
         protected Vector2 groundNormal;
+        protected bool nextToSlope;
+
+        /// <summary>
+        /// Boolean whether the object is on a slope.
+        /// </summary>
+        public bool IsOnSlope;
         protected Rigidbody2D body;
         protected ContactFilter2D contactFilter;
         protected RaycastHit2D[] hitBuffer = new RaycastHit2D[16];
@@ -125,6 +133,8 @@ namespace Platformer.Mechanics
 
             IsGrounded = false;
 
+            nextToSlope = false;
+
             var deltaPosition = velocity * Time.deltaTime;
 
             var moveAlongGround = new Vector2(groundNormal.y, -groundNormal.x);
@@ -139,6 +149,10 @@ namespace Platformer.Mechanics
 
             PerformMovement(move, true);
 
+            SlopeMomentumTimer += Time.deltaTime;
+            
+            // if (SlopeMomentumTimer > SlopeMomentumDuration) ForceToGroundAfterSlope();
+
         }
 
         void PerformMovement(Vector2 move, bool yMovement)
@@ -151,7 +165,9 @@ namespace Platformer.Mechanics
                 var count = body.Cast(move, contactFilter, hitBuffer, distance + shellRadius);
                 for (var i = 0; i < count; i++)
                 {
+                    Debug.DrawLine(body.position, hitBuffer[i].point, Color.red, 1f);
                     var currentNormal = hitBuffer[i].normal;
+                    print("Hit normal: " + currentNormal);
                     //is this surface flat enough to land on?
                     if (minGroundNormalY < (GravityDirection == 1f ? currentNormal.y : -currentNormal.y))
                     {
@@ -167,10 +183,28 @@ namespace Platformer.Mechanics
                     {
                         //how much of our velocity aligns with surface normal?
                         var projection = Vector2.Dot(velocity, currentNormal);
+                        Debug.Log("Projection: " + projection + " in mode yMovement: " + yMovement);
                         if (projection < 0)
                         {
                             //slower velocity if moving against the normal (up a hill).
-                            velocity = velocity - projection * currentNormal;
+                            Debug.Log("Velocity before adjustment: " + velocity);
+                            velocity.y -= velocity.y * currentNormal.y * currentNormal.y;
+                            if (nextToSlope)
+                            {
+                                velocity.y = GravityDirection * 2f;
+                                nextToSlope = false;
+                            }
+                            Debug.Log("Adjusting velocity against normal: " + currentNormal);
+                            Debug.Log("New velocity: " + velocity);
+                        }
+                        if (currentNormal.y != GravityDirection && !yMovement)
+                        {
+                            nextToSlope = true;                        
+                        }
+                        if (currentNormal.y != GravityDirection && yMovement)
+                        {
+                            if (!IsOnSlope) IsOnSlope = true;
+                            SlopeMomentumTimer = 0;
                         }
                     }
                     else if (JumpImmunityTimer <= 0f)
@@ -188,6 +222,14 @@ namespace Platformer.Mechanics
             body.position = body.position + move.normalized * distance;
         }
 
+        protected void ForceToGroundAfterSlope()
+        {
+            if (!IsGrounded && IsOnSlope && JumpImmunityTimer <= 0f)
+            {
+                velocity.y = -GravityDirection * 20f;
+                IsOnSlope = false;
+            }
+        }
         protected void SetGrounded(bool b)
         {
             IsGrounded = b;
