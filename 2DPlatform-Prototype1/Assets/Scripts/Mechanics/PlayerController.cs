@@ -166,6 +166,8 @@ namespace Platformer.Mechanics
                     jumpBufferCounter = jumpBufferTime;
                 else
                     jumpBufferCounter -= Time.deltaTime;
+
+                var tempGravityDirection = GravityDirection;
                 
                 if (!hasLandedAfterGravityInverse && IsGrounded)
                 {
@@ -179,8 +181,9 @@ namespace Platformer.Mechanics
                 if (!hasLandedAfterGravityInverse) 
                 {
                     trail.emitting = true;
+                    tempGravityDirection *= -1;
                 }
-                move.x = Input.GetAxis("Horizontal") * (hasLandedAfterGravityInverse ? 1f : -1f);
+                move.x = Input.GetAxis("Horizontal") * tempGravityDirection;
                 if (jumpState == JumpState.Grounded && jumpBufferCounter > 0f
                     || (isWallSliding && wallJumpingDurationCounter > 0f && jumpBufferCounter > 0f))
                 {
@@ -470,7 +473,7 @@ namespace Platformer.Mechanics
             SetGrounded(false);
             hasLandedAfterGravityInverse = false;
 
-            cinematicCameraSwitcher.SwitchState();
+            // cinematicCameraSwitcher.SwitchState();
 
             AudioManager.Instance.PlayAudio(gravityInverseAudio, transform.position, 0.1f, 0.6f);
         }
