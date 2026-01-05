@@ -7,6 +7,8 @@ TagManager:
   - TutorialRequirement
   - DNI
   - FinishLine
+  - Pickup
+  - ChargeVoid
   layers:
   - Default
   - TransparentFX
@@ -14,7 +16,7 @@ TagManager:
   - Player
   - Water
   - UI
-  - 
+  - Pickup
   - Wall
   - DNI
   - 

@@ -9,6 +9,7 @@ using System.ComponentModel;
 using UnityEngine.Analytics;
 using Cinemachine;
 using Platformer.View;
+using UnityEngine.UI;
 
 namespace Platformer.Mechanics
 {
@@ -99,7 +100,6 @@ namespace Platformer.Mechanics
         /// Time allowed to wall jump after leaving the wall
         /// </summary>
         [SerializeField] private float wallJumpingTime = 0.2f;
-        private float wallJumpingTimeCounter;
 
         /// <summary>
         /// Duration of wall jump invincibility
@@ -133,7 +133,10 @@ namespace Platformer.Mechanics
         internal Animator animator;
         readonly PlatformerModel model = Simulation.GetModel<PlatformerModel>();
         private CinemachineImpulseSource impulseSource;
-        private TrailRenderer trail; 
+        private TrailRenderer trail;
+        [SerializeField] private Slider chargeSlider;
+        private int chargeCount = 0;
+        private int maxCharge = 9;
 
         public Bounds Bounds => collider2d.bounds;
 
@@ -146,6 +149,13 @@ namespace Platformer.Mechanics
             animator = GetComponentInChildren<Animator>();
             impulseSource = GetComponent<CinemachineImpulseSource>();
             trail = GetComponentInChildren<TrailRenderer>();
+
+            chargeCount = 7;
+            if (chargeSlider != null)
+            {
+                chargeSlider.maxValue = maxCharge;
+                chargeSlider.value = chargeCount;
+            }
 
             // Physics2D.IgnoreLayerCollision(3, 8, true);
             // cineMachine = Camera.main.GetComponent<Cinemachine.CinemachineBrain>();
@@ -325,72 +335,9 @@ namespace Platformer.Mechanics
             if (!isWallJumping)
             {
                 targetVelocity = move * maxSpeed;
+                targetVelocity *= 1 - 0.05f * (7 - chargeCount);
             }
         }
-
-        // private bool IsWalled()
-        // {
-        //     foreach (var check in wallCheck)
-        //     {
-        //         bool wallDetected = Physics2D.OverlapCircle(check.position, 0.1f, wallLayer);
-        //         if (wallDetected)
-        //         {
-        //             return true;
-        //         }
-        //     }
-        //     return false;
-        // }
-
-        // private void WallSlide()
-        // {
-        //     if (IsWalled() && !IsGrounded && !isWallJumping)
-        //     {
-        //         isWallSliding = true;
-        //         velocity.y = Mathf.Clamp(velocity.y, -wallSlideSpeed, float.MaxValue);
-        //     }
-        //     else
-        //     {
-        //         isWallSliding = false;
-        //     }
-        // }
-
-        // private void WallJumpPrep()
-        // {
-        //     if (isWallSliding)
-        //     {
-        //         foreach (var check in wallCheck)
-        //         {
-        //             if (Physics2D.OverlapCircle(check.position, 0.1f, wallLayer))
-        //             {
-        //                 wallJumpDirection = check.position.x > transform.position.x ? -1f : 1f;
-        //                 break;
-        //             }
-        //         }
-        //         wallJumpingTimeCounter = wallJumpingTime;
-        //     }
-        //     else
-        //     {
-        //         wallJumpingTimeCounter -= Time.deltaTime;
-        //     }
-
-        //     if (Input.GetButtonDown("Jump") && wallJumpingTimeCounter > 0f)
-        //     {
-        //         wallJumpingDurationCounter = wallJumpingDuration;
-        //         wallJumpingTimeCounter = 0f;
-        //     }
-
-        //     if (isWallJumping)
-        //     {
-        //         wallJumpingDurationCounter -= Time.deltaTime;
-        //     }
-
-        //     if (wallJumpingDurationCounter <= 0f && isWallJumping || IsGrounded && isWallJumping)
-        //     {
-        //         wallJumpingDurationCounter = 0f;
-        //         isWallJumping = false;
-        //         wallJumpDirection = 0f;
-        //     }
-        // }
 
         private void FlipHorizontal()
         {
@@ -465,6 +412,13 @@ namespace Platformer.Mechanics
 
         public void InverseGravity()
         {
+            if (chargeCount <= 0) return;
+            chargeCount--;
+            if (chargeSlider != null)
+            {
+                chargeSlider.value = chargeCount;
+            }
+
             Physics2D.gravity *= -1;
             GravityDirection *= -1;
 
@@ -476,6 +430,32 @@ namespace Platformer.Mechanics
             // cinematicCameraSwitcher.SwitchState();
 
             AudioManager.Instance.PlayAudio(gravityInverseAudio, transform.position, 0.1f, 0.6f);
+        }
+
+        public void ModifyPlayerCharges(int amount)
+        {
+            chargeCount += amount;
+            if (chargeCount > maxCharge) chargeCount = maxCharge;
+            else if (chargeCount < 0) chargeCount = 0;
+
+            if (chargeSlider != null)
+            {
+                chargeSlider.value = chargeCount;
+            }
+        }
+
+        public void OnCollisionEnter2D(Collision2D collision)
+        {
+            if (collision.gameObject.CompareTag("Pickup"))
+            {
+                ModifyPlayerCharges(2);
+                Destroy(collision.gameObject);
+            }
+            if (collision.gameObject.CompareTag("ChargeVoid"))
+            {
+                ModifyPlayerCharges(-3);
+                Destroy(collision.gameObject);
+            }
         }
 
         public enum JumpState
