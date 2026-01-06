@@ -335,7 +335,7 @@ namespace Platformer.Mechanics
             if (!isWallJumping)
             {
                 targetVelocity = move * maxSpeed;
-                targetVelocity *= 1 - 0.05f * (7 - chargeCount);
+                // targetVelocity *= 1 - 0.03f * (7 - chargeCount);
             }
         }
 
@@ -412,8 +412,8 @@ namespace Platformer.Mechanics
 
         public void InverseGravity()
         {
-            if (chargeCount <= 0) return;
-            chargeCount--;
+            // if (chargeCount <= 0) return;
+            ModifyPlayerCharges(-1);
             if (chargeSlider != null)
             {
                 chargeSlider.value = chargeCount;
@@ -436,12 +436,25 @@ namespace Platformer.Mechanics
         {
             chargeCount += amount;
             if (chargeCount > maxCharge) chargeCount = maxCharge;
-            else if (chargeCount < 0) chargeCount = 0;
+            if (chargeCount <= 0)
+            {
+                chargeCount = 0;
+                StartCoroutine(OutOfCharges());
+            } 
+            else if (chargeCount > 0) 
+            {
+                StopCoroutine(OutOfCharges());
+            }
 
             if (chargeSlider != null)
             {
                 chargeSlider.value = chargeCount;
             }
+        }
+
+        public IEnumerator OutOfCharges()
+        {
+            yield return new WaitForSeconds(7f);
         }
 
         public void OnCollisionEnter2D(Collision2D collision)
