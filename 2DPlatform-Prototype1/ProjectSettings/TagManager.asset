@@ -58,6 +58,9 @@ TagManager:
   - name: Player
     uniqueID: 298844407
     locked: 0
+  - name: UI Overlay
+    uniqueID: 4054058055
+    locked: 0
   m_RenderingLayers:
   - Default
   - Light Layer 1

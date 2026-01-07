@@ -25,7 +25,12 @@ namespace Platformer.Model
         /// <summary>
         /// The spawn point in the scene.
         /// </summary>
-        public Transform spawnPoint;
+        public Vector3 spawnPoint;
+
+        /// <summary>
+        /// The gravity modifier at the last spawn point.
+        /// </summary>
+        public float gravityAtSpawn = 1f;
 
         /// <summary>
         /// A global jump modifier applied to all initial jump velocities.

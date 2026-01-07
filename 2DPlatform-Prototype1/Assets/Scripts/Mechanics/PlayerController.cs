@@ -459,16 +459,16 @@ namespace Platformer.Mechanics
 
         public void OnCollisionEnter2D(Collision2D collision)
         {
-            if (collision.gameObject.CompareTag("Pickup"))
-            {
-                ModifyPlayerCharges(2);
-                Destroy(collision.gameObject);
-            }
-            if (collision.gameObject.CompareTag("ChargeVoid"))
-            {
-                ModifyPlayerCharges(-3);
-                Destroy(collision.gameObject);
-            }
+            // if (collision.gameObject.CompareTag("Pickup"))
+            // {
+            //     ModifyPlayerCharges(2);
+            //     Destroy(collision.gameObject);
+            // }
+            // if (collision.gameObject.CompareTag("ChargeVoid"))
+            // {
+            //     ModifyPlayerCharges(-3);
+            //     Destroy(collision.gameObject);
+            // }
         }
 
         public enum JumpState

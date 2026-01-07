@@ -19,7 +19,7 @@ namespace Platformer.Gameplay
             var player = model.player;
             if (player.health.IsAlive)
             {
-                player.health.Die();
+                player.health.Decrement();
                 model.virtualCamera.m_Follow = null;
                 model.virtualCamera.m_LookAt = null;
                 // player.collider.enabled = false;
@@ -27,9 +27,17 @@ namespace Platformer.Gameplay
 
                 if (player.audioSource && player.ouchAudio)
                     player.audioSource.PlayOneShot(player.ouchAudio);
-                player.animator.SetTrigger("hurt");
-                player.animator.SetBool("dead", true);
-                Simulation.Schedule<PlayerSpawn>(2);
+                // player.animator.SetTrigger("hurt");
+                // player.animator.SetBool("dead", true);
+
+                if (!player.health.IsAlive)
+                {
+                    player.controlEnabled = false;
+                    player.health.GameOver();
+                    return;
+                }
+
+                Simulation.Schedule<PlayerSpawn>(1);
             }
         }
     }
